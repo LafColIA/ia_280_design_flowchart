@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Design Chooser — IA 280</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --ink:#12161c; --muted:#5c6773;
+    --line:#dde2e8; --accent:#0b7285; --accent-ink:#ffffff;
+    --chip:#eef2f6; --dim:#aab4c0;
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e1218; --panel:#161c24; --ink:#e8edf3; --muted:#98a4b3;
+      --line:#26303c; --accent:#39c0d3; --accent-ink:#08121a;
+      --chip:#1d2731; --dim:#4b5866;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:24px 16px 64px;
+  }
+  .wrap{max-width:820px;margin:0 auto}
+  header{margin-bottom:22px}
+  h1{font-size:1.5rem;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:.92rem;margin:0}
+  .tabs{display:flex;gap:4px;margin:20px 0 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tabs button{
+    background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);
+    font:inherit;font-size:.94rem;font-weight:600;padding:8px 12px;cursor:pointer;margin-bottom:-1px;
+  }
+  .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:22px;box-shadow:var(--shadow);
+  }
+  .kicker{
+    font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 8px;
+  }
+  .q{font-size:1.22rem;font-weight:650;margin:0 0 6px;letter-spacing:-.01em}
+  .hint{color:var(--muted);font-size:.9rem;margin:0 0 18px}
+  .choices{display:flex;flex-wrap:wrap;gap:10px}
+  .choices button{
+    font:inherit;font-weight:600;cursor:pointer;padding:10px 18px;border-radius:9px;
+    border:1px solid var(--line);background:var(--chip);color:var(--ink);text-align:left;
+  }
+  .choices button:hover{border-color:var(--accent)}
+  .choices button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .milestone{
+    border-left:3px solid var(--accent);background:var(--chip);
+    padding:14px 16px;border-radius:0 8px 8px 0;margin:0 0 18px;
+  }
+  .milestone h2{font-size:1.1rem;margin:0 0 6px}
+  .milestone p{margin:0 0 8px;font-size:.94rem}
+  .milestone p:last-child{margin-bottom:0}
+  .flag{
+    display:inline-block;background:var(--chip);border:1px solid var(--line);
+    border-radius:6px;padding:2px 8px;font-size:.76rem;font-weight:700;
+    letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;
+  }
+  .where{font-size:.86rem;color:var(--muted)}
+  .where b{color:var(--ink);font-weight:600}
+  .where a{color:var(--accent)}
+  .path{margin-top:22px}
+  .path h3{
+    font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 10px;
+  }
+  ol.trail{list-style:none;margin:0;padding:0;font-size:.9rem}
+  ol.trail li{padding:7px 0 7px 14px;border-left:2px solid var(--line);color:var(--muted)}
+  ol.trail li.ms{border-left-color:var(--accent)}
+  ol.trail li b{color:var(--ink);font-weight:600}
+  ol.trail li .ans{
+    display:inline-block;background:var(--chip);border-radius:5px;
+    padding:1px 7px;margin-left:6px;font-size:.82rem;font-weight:600;color:var(--ink);
+  }
+  ol.trail li button{
+    background:none;border:0;color:var(--accent);font:inherit;font-size:.82rem;
+    cursor:pointer;padding:0 0 0 8px;text-decoration:underline;
+  }
+  .controls{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .controls button{
+    font:inherit;font-size:.9rem;cursor:pointer;padding:8px 14px;border-radius:8px;
+    border:1px solid var(--line);background:none;color:var(--muted);
+  }
+  .controls button:hover{color:var(--ink);border-color:var(--accent)}
+
+  /* ---- the diagram ---- */
+  .chart{margin-top:16px}
+  .chartbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin:0 0 8px;flex-wrap:wrap;
+  }
+  .chartbar h3{
+    font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);margin:0;
+  }
+  .zoom{display:flex;gap:6px}
+  .zoom button{
+    font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;
+    width:30px;height:30px;border-radius:7px;line-height:1;
+    border:1px solid var(--line);background:var(--panel);color:var(--muted);
+  }
+  .zoom button:hover{color:var(--ink);border-color:var(--accent)}
+  .zoom button.wide{width:auto;padding:0 10px}
+  .scroller{
+    overflow:auto;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow);max-height:60vh;
+    overscroll-behavior:contain;
+  }
+  .scroller svg{display:block}
+  .nd rect{stroke-width:1.25}
+  .nd text{font-size:11px;font-weight:600}
+  .nd.off rect{fill:var(--panel);stroke:var(--dim)}
+  .nd.off text{fill:var(--muted)}
+  .nd.on  rect{fill:var(--accent);stroke:var(--accent)}
+  .nd.on  text{fill:var(--accent-ink)}
+  .nd.now rect{stroke:var(--ink);stroke-width:3}
+  .nd.ms.off rect{stroke:var(--accent);stroke-dasharray:none}
+  .nd.ms.off text{fill:var(--ink)}
+  .ed{fill:none;stroke:var(--dim);stroke-width:1.25}
+  .ed.on{stroke:var(--accent);stroke-width:2.5}
+  .el{font-size:9px;font-weight:700;fill:var(--muted)}
+  .el.on{fill:var(--accent)}
+  .elbg{fill:var(--panel)}
+  .legend{margin-top:8px;font-size:.8rem;color:var(--muted)}
+
+  .map h2{font-size:1rem;margin:26px 0 8px;letter-spacing:-.01em}
+  .map h2:first-child{margin-top:0}
+  .map ul{margin:0 0 6px;padding-left:20px}
+  .map li{margin:5px 0;font-size:.92rem}
+  .map .term{font-weight:650}
+  .map .cond{color:var(--muted)}
+  .lead{font-size:.94rem;color:var(--muted);margin:0 0 18px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+  footer{margin-top:28px;color:var(--muted);font-size:.82rem}
+  footer p{margin:0 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Research Design Chooser</h1>
+  <p class="sub">IA 280 Research Methods in International Affairs · Lafayette College</p>
+</header>
+
+<div class="tabs" role="tablist">
+  <button role="tab" id="tab-walk" aria-selected="true" onclick="setTab('walk')">Walk me through it</button>
+  <button role="tab" id="tab-causal" aria-selected="false" onclick="setTab('causal')">Just the causal method chooser</button>
+  <button role="tab" id="tab-map" aria-selected="false" onclick="setTab('map')">Text outline</button>
+</div>
+
+<div id="panel-walk">
+  <div class="card" id="stage"></div>
+  <div class="chart">
+    <div class="chartbar">
+      <h3>Where you are</h3>
+      <div class="zoom">
+        <button onclick="zoom(-1)" title="Zoom out">&minus;</button>
+        <button onclick="zoom(1)" title="Zoom in">+</button>
+        <button class="wide" onclick="centreOnCurrent()">Recentre</button>
+      </div>
+    </div>
+    <div class="scroller" id="scroller"></div>
+    <p class="legend">Filled boxes are the path you have taken; the outlined box is where you are now. Everything faded is a road not taken — scroll around to see where the other answers would have led.</p>
+  </div>
+</div>
+
+<div id="panel-map" hidden><div class="card map" id="mapbody"></div></div>
+
+<footer>
+  <p>This tool asks the questions in the order that makes each next question answerable. It is a way of thinking, not an oracle — if the answer it gives you feels wrong, the interesting thing is <em>why</em>, and that is worth raising in class.</p>
+  <p>Rebuilt from the course's research design flowchart and the causal inference chooser.</p>
+</footer>
+
+</div>
+
+<script>
+/* ==================================================================
+   THE TREE
+   type: step | question | end
+   short: label used in the diagram (keep it short)
+   milestone: announced as a result rather than a step
+   flag: small caption above a milestone
+   where: which week of IA 280 covers it (HTML allowed)
+===================================================================*/
+const T = {
+
+/* ---------- Phase 1: framing ---------- */
+p_topic:{phase:"Framing the question",type:"step",short:"Identify topic",
+  title:"Identify your general topic.",
+  note:"Broad is fine at this stage. You are looking for the neighbourhood, not the address.",
+  to:"p_brainstorm"},
+p_brainstorm:{phase:"Framing the question",type:"step",short:"Brainstorm questions",
+  title:"Brainstorm general questions about it.",
+  note:"Write down more than you need. Most of them will be normative, purely descriptive, or about predicting the future — and all three of those are things a research question should not be.",
+  to:"p_sources"},
+p_sources:{phase:"Framing the question",type:"step",short:"Identify sources",
+  title:"Identify useful sources.",note:"",to:"p_citations"},
+p_citations:{phase:"Framing the question",type:"step",short:"Review literature",
+  title:"Follow citation chains to review the literature.",
+  note:"Work backwards from what a few good papers cite, and forwards from who cites them.",
+  to:"q_gap"},
+q_gap:{phase:"Framing the question",type:"question",short:"Gap in the literature?",
+  title:"Does your question reveal a gap in the literature?",
+  note:"If somebody has already answered it well, that is useful to know now rather than in November.",
+  choices:[{label:"Yes",to:"q_hyp"},{label:"No — back to brainstorming",to:"p_brainstorm"}]},
+q_hyp:{phase:"Framing the question",type:"question",short:"Enough for a hypothesis?",
+  title:"Does the existing literature tell you enough to formulate a preliminary hypothesis?",
+  note:"A preliminary hypothesis is a guess you are willing to be wrong about in public. It does not have to be right.",
+  choices:[{label:"Yes",to:"p_hypothesis"},{label:"No — read more first",to:"p_sources"}]},
+p_hypothesis:{phase:"Framing the question",type:"step",short:"Formulate hypothesis",
+  title:"Formulate your preliminary hypothesis.",note:"",to:"p_variables"},
+p_variables:{phase:"Framing the question",type:"step",short:"Identify variables",
+  title:"Identify your independent, dependent, and confounding variables.",
+  note:"The confounders are the ones people forget, and they are what most of the rest of this tool is about. Note that everything downstream assumes your question is <em>causal</em> — that you think one thing changes another.",
+  where:"Week 7, Mon Oct. 5 — Conceptualization, operationalization, measurement",
+  to:"q_manipulate"},
+
+/* ---------- Phase 2: design ---------- */
+q_manipulate:{phase:"Choosing a design",type:"question",short:"Can you manipulate the IV?",
+  title:"Is it feasible and ethical for you to manipulate the independent variable?",
+  note:"Both words matter. Plenty of things you could manipulate, you should not.",
+  choices:[{label:"Yes",to:"q_field"},{label:"No",to:"q_many"}]},
+q_field:{phase:"Choosing a design",type:"question",short:"In a field setting?",
+  title:"Is it feasible and ethical to manipulate it in a real-world field setting?",
+  note:"As opposed to a room you control.",
+  choices:[{label:"Yes",to:"d_rct"},{label:"No",to:"q_conditions"}]},
+q_conditions:{phase:"Choosing a design",type:"question",short:"Conditions affect outcome?",
+  title:"Is there a high risk that the research conditions will affect the experimental outcome?",
+  note:"If the setting itself is going to move your outcome, you want to be somewhere you can hold it still and measure it.",
+  choices:[{label:"Yes",to:"d_lab"},{label:"No",to:"d_embedded"}]},
+q_many:{phase:"Choosing a design",type:"question",short:"Many cases feasible?",
+  title:"Is it feasible to collect data on a large number of cases?",
+  note:"Large enough that differences between groups could not easily be luck.",
+  choices:[{label:"Yes",to:"d_stats"},{label:"No",to:"q_single"}]},
+q_single:{phase:"Choosing a design",type:"question",short:"A single event?",
+  title:"Are you trying to explain a single event or outcome?",
+  note:"One case you care about for its own sake, rather than a pattern across many.",
+  choices:[{label:"Yes",to:"q_comparables"},{label:"No",to:"d_comparative"}]},
+q_comparables:{phase:"Choosing a design",type:"question",short:"Comparable cases with data?",
+  title:"Are there reasonably comparable cases with data — ones that were <em>not</em> affected, with records running back to before the event?",
+  note:"This is the question that decides whether a single case can be studied quantitatively. You only have one affected case either way — but if there are enough unaffected ones to compare against, you can build a synthetic version of what your case would have looked like had the event not happened.",
+  choices:[{label:"Yes",to:"q_single_route"},{label:"No",to:"d_process"}]},
+q_single_route:{phase:"Choosing a design",type:"question",short:"Mechanism or magnitude?",
+  title:"What do you most need to establish — how it happened, or how big it was?",
+  note:"Both are legitimate and they answer different questions. They also combine well: a synthetic control tells you the size of the effect, and process tracing tells you the mechanism that produced it. If you have the time, do both.",
+  choices:[{label:"How it happened — the mechanism",mini:"Mechanism",to:"d_process"},
+           {label:"How big the effect was",mini:"Magnitude",to:"m_synthetic"}]},
+
+d_rct:{phase:"Your design",type:"step",milestone:"Randomized controlled trial",short:"RCT",
+  title:"Design a randomized controlled trial.",
+  note:"You assign the treatment yourself, in the world rather than in a lab. This is the strongest claim on causality you can make — and the hardest to get through an ethics review.",
+  where:"Week 4, Wed Sep. 16 — Causal analysis: experiments",
+  to:"ex_shape"},
+d_lab:{phase:"Your design",type:"step",milestone:"Lab experiment",short:"Lab experiment",
+  title:"Design a lab experiment.",
+  note:"You trade some realism for control. Everything that could vary, you get to hold still — which is exactly what you need when the setting would otherwise move your outcome on its own.",
+  where:"Week 4, Wed Sep. 16 — Causal analysis: experiments",
+  to:"ex_shape"},
+d_embedded:{phase:"Your design",type:"step",milestone:"Embedded survey experiment",short:"Survey experiment",
+  title:"Design an embedded survey experiment.",
+  note:"The manipulation hides inside a survey — different respondents see different wording, vignettes, or orderings. You keep random assignment without putting anyone in a room.",
+  where:"Week 7, Fri Oct. 9 — Surveys and sampling",
+  to:"ex_shape"},
+d_stats:{phase:"Your design",type:"step",short:"Observational study",
+  title:"You are working with observational data — so your design and your analysis are the same choice.",
+  note:"Nobody assigned the treatment, so your problem is not measurement, it is confounding. In an experiment the design comes first and the analysis follows; here, <em>picking difference-in-differences</em> or <em>picking matching</em> <em>is</em> the design. That is why the next few questions are really about what you have to build into your data collection.",
+  where:"Week 5, Mon Sep. 21 — Causal analysis: observational data",
+  to:"ci_binary"},
+d_process:{phase:"Your design",type:"step",milestone:"Process-tracing case study",short:"Process tracing",
+  title:"Design a process-tracing case study.",
+  note:"An ideographic design: you extract what you can from one case by reconstructing the causal chain link by link, looking for the evidence each link would have left behind if it were real.",
+  where:"Week 6, Mon Sep. 28 — Research design: case studies (Levy 2008)",
+  to:"pt_evidence"},
+d_comparative:{phase:"Your design",type:"step",milestone:"Comparative case study",short:"Comparative cases",
+  title:"Design a comparative case study.",
+  note:"These designs rest on necessary and sufficient causes: if your independent variable is present where the outcome is absent, it is not sufficient; if it is absent where the outcome is present, it is not necessary. Perfectly necessary and sufficient causes are rare in social life, but the logic is still how you choose cases.",
+  where:"Week 6, Mon Sep. 28 — Research design: case studies (Levy 2008)",
+  to:"cc_n"},
+
+/* ---------- Phase 2b: analysis, by design ---------- */
+ex_shape:{phase:"Choosing your analysis",type:"question",short:"On/off or several arms?",
+  title:"Is your treatment a simple on/off condition, or does it have several arms or vary in degree?",
+  note:"Random assignment you already have — that is what designing the experiment bought you. This is the only live question left, and it decides whether a comparison of means will do.",
+  choices:[{label:"Simple on/off",to:"xa_ttest"},{label:"Several arms, or a dose",to:"xa_regression"}]},
+xa_ttest:{phase:"Your analysis",type:"step",milestone:"T-test and data visualization",short:"T-test + chart",
+  title:"Compare the groups directly — a t-test, and a good chart.",
+  note:"Because you assigned the treatment at random, the difference between the groups <em>is</em> your estimate. You do not need to adjust for anything, and adding controls to a clean experiment usually raises more questions than it answers.",
+  where:"Labs 2 and 6 — Comparing groups, Data visualization",
+  to:"c_experiment"},
+xa_regression:{phase:"Your analysis",type:"step",milestone:"Regression across treatment arms",short:"Regression (arms)",
+  title:"Use regression across your treatment arms.",
+  note:"With more than two conditions, or a treatment that varies in degree, a t-test throws away most of what you designed. Regression lets you compare every arm against your control in one model — and estimate whether more of the treatment means more of the effect.",
+  where:'Week 5, Mon Sep. 21 · <a href="https://www.youtube.com/watch?v=vPde9bYrr80">Regression analysis (video)</a>',
+  to:"c_experiment"},
+
+ci_binary:{phase:"Choosing your analysis",type:"question",short:"IV binary?",
+  title:"Is your independent variable binary — 1/0, treated/untreated, yes/no?",
+  note:"Not \"could you force it into two buckets,\" but is the thing itself an on/off condition. Most of the causal inference toolkit assumes a treatment that either happened or did not.",
+  choices:[{label:"Yes",to:"ci_random"},{label:"No — it's continuous",to:"ci_confound_c"}]},
+ci_confound_c:{phase:"Choosing your analysis",type:"question",short:"Confounder data?",
+  title:"Can you get data on the confounding variables you need to control for?",
+  note:"You listed them earlier. This asks whether you can actually measure them.",
+  choices:[{label:"Yes",to:"m_regression"},{label:"No",to:"m_correlation"}]},
+ci_random:{phase:"Choosing your analysis",type:"question",short:"Randomly assigned?",
+  title:"Is your independent variable randomly assigned?",
+  note:"Not by you — but some process outside anyone's control may have done it for you: a lottery, a threshold, an accident of timing. If so, you are in a much stronger position than you may realize.",
+  choices:[{label:"Yes",to:"m_ttest"},{label:"No",to:"ci_parallel"}]},
+ci_parallel:{phase:"Choosing your analysis",type:"question",short:"Parallel trends?",
+  title:"Do you have — or can you get — a control group whose trend before the treatment runs parallel to the treated group's?",
+  note:"Parallel <em>before</em> the treatment is the whole assumption. It is not enough for the two groups to be similar; they have to have been moving together. That usually means data from several periods before the thing happened — a collection decision, not an analysis one.",
+  choices:[{label:"Yes",to:"ci_single2"},{label:"No",to:"ci_confound_b"}]},
+ci_confound_b:{phase:"Choosing your analysis",type:"question",short:"Confounder data?",
+  title:"Can you get data on the confounding variables you need to control for?",
+  note:"Same question as on the other branch, and the same answer decides whether you can build comparable groups after the fact.",
+  choices:[{label:"Yes",to:"m_matching"},{label:"No",to:"m_ttest"}]},
+ci_single2:{phase:"Choosing your analysis",type:"question",short:"A single event?",
+  title:"Are you making claims about a single event?",
+  note:"One treated case, rather than many units treated at various times.",
+  choices:[{label:"Yes",to:"m_synthetic"},{label:"No",to:"m_did"}]},
+
+m_ttest:{phase:"Your design and analysis",type:"step",milestone:"T-test and data visualization",short:"T-test + chart",
+  flag:"Design and analysis",
+  title:"Compare the groups directly — a t-test, and a good chart.",
+  note:"If you got here because assignment was effectively random, the comparison itself is the estimate. If you got here because you could not measure your confounders, be honest about that in writing: the comparison is still worth showing, it just is not causal.",
+  where:"Labs 2 and 6 — Comparing groups, Data visualization",
+  to:"q_exist"},
+m_matching:{phase:"Your design and analysis",type:"step",milestone:"Matching",short:"Matching",
+  flag:"Design and analysis",
+  title:"Use matching to build comparable groups.",
+  note:"You pair treated cases with untreated ones that look the same on the confounders you measured — and only on those. Matching cannot fix a confounder you never observed, which is the objection to expect first.",
+  where:'Lab 8 — Matching · <a href="https://www.youtube.com/watch?v=KlL2EVLnLX8">Propensity score matching (video)</a>',
+  to:"q_exist"},
+m_did:{phase:"Your design and analysis",type:"step",milestone:"Difference-in-differences",short:"Diff-in-diff",
+  flag:"Design and analysis",
+  title:"Use difference-in-differences.",
+  note:"You compare the change in the treated group against the change in the control group, so anything that affected both drops out. It stands or falls on the parallel trends assumption — show the pre-treatment trends, do not just assert them.",
+  where:'Lab 3 — Causal inference tools in R · <a href="https://www.youtube.com/watch?v=eiffOVbYvNc">Introduction to difference-in-differences (video)</a>',
+  to:"q_exist"},
+m_synthetic:{phase:"Your design and analysis",type:"step",milestone:"Synthetic control",short:"Synthetic control",
+  flag:"Design and analysis",
+  title:"Build a synthetic control.",
+  note:"You construct a weighted combination of unaffected cases that tracks your case closely <em>before</em> the event, then let it run forward as the counterfactual. It is how a single case gets studied quantitatively — and the set of comparison cases is doing all the work, so say which ones you used and why.",
+  where:'Week 5, Mon Sep. 21 · <a href="https://www.youtube.com/watch?v=IUNH5c_VLLg">Synthetic controls (video)</a>',
+  to:"q_exist"},
+m_correlation:{phase:"Your design and analysis",type:"step",milestone:"Correlation",short:"Correlation",
+  flag:"Design and analysis",
+  title:"Report the correlation — and stop there.",
+  note:"Without measured confounders and without random assignment, an association is what your data can support, so that is what you should claim. This is not a failed project; it is an honest one. Say plainly what would have to be true for the relationship to be causal, and what you would need to find out.",
+  where:"Lab 5 — Descriptive statistics",
+  to:"q_exist"},
+m_regression:{phase:"Your design and analysis",type:"step",milestone:"Regression",short:"Regression",
+  flag:"Design and analysis",
+  title:"Use regression, controlling for your confounders.",
+  note:"A control is a claim that you have measured the confounder well. That claim is usually the weakest part of the paper, and it is where an Inverseminar audience will go first.",
+  where:'Week 5, Mon Sep. 21 · Lab 8 · <a href="https://www.youtube.com/watch?v=vPde9bYrr80">Regression analysis (video)</a>',
+  to:"q_exist"},
+
+pt_evidence:{phase:"Choosing your analysis",type:"question",short:"Counterfactual or Bayesian?",
+  title:"How do you want to weigh the evidence — counterfactually, or by updating?",
+  note:"Process tracing is the formalized version of single-case work, and these are its two standard approaches. Both ask you to be explicit in advance about what you would expect to find.",
+  choices:[{label:"Counterfactually",mini:"Counterfactual",to:"m_pt_counterfactual"},{label:"By updating — Bayesian",mini:"Bayesian",to:"m_pt_bayesian"}]},
+m_pt_counterfactual:{phase:"Your analysis",type:"step",milestone:"Counterfactual process tracing",short:"Counterfactual PT",
+  title:"Trace the process counterfactually.",
+  note:"At each link in the chain you ask what would have had to be different for the outcome to change. The discipline is in taking the counterfactual seriously enough to say what evidence would have shown it — otherwise you are just narrating.",
+  where:"Week 6, Mon Sep. 28 — Case studies (Levy 2008)",
+  to:"q_exist"},
+m_pt_bayesian:{phase:"Your analysis",type:"step",milestone:"Bayesian process tracing",short:"Bayesian PT",
+  title:"Trace the process using Bayesian updating.",
+  note:"You state your rival explanations first, then ask of each piece of evidence how much more likely it is under one than the other. Evidence that both explanations predict equally tells you nothing, however striking it is — which is the point of doing it this way.",
+  where:"Week 6, Mon Sep. 28 — Case studies (Levy 2008)",
+  to:"q_exist"},
+
+cc_n:{phase:"Choosing your analysis",type:"question",short:"How many cases?",
+  title:"How many cases can you realistically work with?",
+  note:"This is the constraint that picks your method, and it is worth being pessimistic about. Each case is a literature, a data hunt, and usually a language problem.",
+  choices:[{label:"A handful — two to five",to:"cc_logic"},
+           {label:"A medium number — roughly ten to fifty",mini:"Medium N",to:"m_qca"}]},
+cc_logic:{phase:"Choosing your analysis",type:"question",short:"Difference or commonality?",
+  title:"Are you trying to show a candidate cause makes a difference, or to find what your cases have in common?",
+  note:"The two comparative designs are built for these two different jobs, and picking the wrong one is the most common way a comparative case study fails to show anything.",
+  choices:[{label:"That a cause makes a difference",mini:"Difference",to:"m_most_similar"},
+           {label:"What they have in common",mini:"Commonality",to:"m_most_different"}]},
+m_most_similar:{phase:"Your analysis",type:"step",milestone:"Most similar cases design",short:"Most similar cases",
+  title:"Use a most similar cases design.",
+  note:"Pick cases that are as alike as possible on the potential confounders, but that differ on both your independent and your dependent variable. If they match on everything except the thing you care about, the thing you care about is the candidate explanation.",
+  where:"Week 6, Mon Sep. 28 — Case studies",
+  to:"q_exist"},
+m_most_different:{phase:"Your analysis",type:"step",milestone:"Most different cases design",short:"Most different cases",
+  title:"Use a most different cases design.",
+  note:"Pick cases that are as unlike each other as possible on the potential confounders but that share the same outcome. Whatever they still have in common is your candidate — this is the design that hunts for a necessary condition.",
+  where:"Week 6, Mon Sep. 28 — Case studies",
+  to:"q_exist"},
+m_qca:{phase:"Your analysis",type:"step",milestone:"Qualitative comparative analysis",short:"QCA",
+  title:"Use qualitative comparative analysis.",
+  note:"QCA uses Boolean logic to work out which combinations of conditions are associated with the outcome across a medium number of cases — so it can find that A matters only in the presence of B, which neither of the small-N designs can. Be warned that deciding where each case sits on each condition is itself a substantial piece of work, and it is the part that gets challenged.",
+  where:"Week 6, Mon Sep. 28 — Case studies",
+  to:"q_exist"},
+
+/* ---------- Phase 3: data ---------- */
+c_experiment:{phase:"Getting your data",type:"step",short:"Run the experiment",
+  title:"Run it and collect your experimental data.",
+  note:"Your design already is your data collection, so you can skip the questions about sourcing data.",
+  to:"a_analyze"},
+q_exist:{phase:"Getting your data",type:"question",short:"Data already exist?",
+  title:"Do the data you need already exist?",
+  note:"Somebody may have already gone to the trouble. Check before you repeat it.",
+  choices:[{label:"Yes",to:"q_secondary"},{label:"No",to:"q_ask"}]},
+q_secondary:{phase:"Getting your data",type:"question",short:"Reachable via archives?",
+  title:"Can you actually get at them, through secondary sources or archives?",
+  note:"Existing and reachable are different things, especially for anything governments hold.",
+  choices:[{label:"Yes",to:"c_secondary"},{label:"No",to:"q_ask"}]},
+q_ask:{phase:"Getting your data",type:"question",short:"Ask people?",
+  title:"Can you collect your data by asking people questions?",
+  note:"",
+  choices:[{label:"Yes",to:"q_resources"},{label:"No",to:"q_observe"}]},
+q_resources:{phase:"Getting your data",type:"question",short:"Resources for interviews?",
+  title:"Do you have the resources for a lot of in-person interviews?",
+  note:"Time, travel, access, and somebody willing to talk to an undergraduate.",
+  choices:[{label:"Yes",to:"q_validity"},{label:"No",to:"q_closed"}]},
+q_validity:{phase:"Getting your data",type:"question",short:"Which validity?",
+  title:"Which are you more worried about — ecological validity, or internal validity?",
+  note:"Ecological: whether what you see in the interview resembles how people actually behave. Internal: whether you are measuring the same thing consistently across everyone you talk to.",
+  choices:[{label:"Ecological validity",mini:"Ecological",to:"c_unstructured"},{label:"Internal validity",mini:"Internal",to:"c_structured"}]},
+q_closed:{phase:"Getting your data",type:"question",short:"Closed-form items?",
+  title:"Is it feasible to operationalize your key variables as closed-form questions?",
+  note:"That is, can what you want to know survive being turned into fixed options somebody ticks?",
+  choices:[{label:"Yes",to:"c_survey"},{label:"No",to:"q_observe"}]},
+q_observe:{phase:"Getting your data",type:"question",short:"Observe behaviour?",
+  title:"Can you collect your data by observing people's behaviour?",
+  note:"Watching what people do, rather than asking them what they do. The two often disagree.",
+  choices:[{label:"Yes",to:"c_ethnography"},{label:"No",to:"e_stuck"}]},
+c_secondary:{phase:"Getting your data",type:"step",milestone:"Secondary sources and archives",short:"Archives",
+  title:"Collect secondary sources and archival materials.",
+  note:"Remember that somebody decided what to keep. The gaps in an archive are evidence too.",
+  where:"Week 8, Fri Oct. 16 — Data collection: archives",to:"c_code"},
+c_structured:{phase:"Getting your data",type:"step",milestone:"Structured interviews",short:"Structured interviews",
+  title:"Conduct in-person structured interviews.",
+  note:"Everyone gets the same questions in the same order, so answers are comparable across people.",
+  where:"Week 9, Fri Oct. 23 — Data collection: interviews",to:"c_code"},
+c_unstructured:{phase:"Getting your data",type:"step",milestone:"Unstructured or semi-structured interviews",short:"Semi-structured",
+  title:"Conduct unstructured or semi-structured interviews.",
+  note:"You follow what the person says rather than a script. You will learn things you did not know to ask about, and pay for it in comparability.",
+  where:"Week 9, Fri Oct. 23 — Data collection: interviews",to:"c_code"},
+c_survey:{phase:"Getting your data",type:"step",milestone:"Survey",short:"Survey",
+  title:"Conduct a survey appropriate for your target population.",
+  note:"The sampling frame is the whole game. Who could not have ended up in your sample?",
+  where:"Week 7, Fri Oct. 9 — Surveys and sampling · Week 8, Wed Oct. 14 — Survey work in practice",
+  to:"a_analyze"},
+c_ethnography:{phase:"Getting your data",type:"step",milestone:"Ethnographic research",short:"Ethnography",
+  title:"Conduct ethnographic research.",
+  note:"You are the instrument. What you can see depends on who lets you in and what they make of you.",
+  where:"Week 10, Mon Oct. 26 — Data collection: ethnography",to:"c_code"},
+c_code:{phase:"Making sense of it",type:"step",short:"Qualitative coding",
+  title:"Qualitatively code your data to identify themes and patterns.",
+  note:"Coding is where qualitative data becomes evidence rather than anecdote. Write your codebook down before you are done, not after.",
+  where:"Week 11, Wed — Text as data · Lab 7",to:"a_analyze"},
+
+/* ---------- Phase 4: conclusions ---------- */
+a_analyze:{phase:"Making sense of it",type:"step",short:"Run your analysis",
+  title:"Carry out the analysis you settled on earlier.",
+  note:"If you find yourself choosing a method now, something has gone wrong upstream — go back. Picking the technique after you have seen the data is how people end up reporting the one specification that worked.",
+  to:"a_assess"},
+a_assess:{phase:"Making sense of it",type:"step",short:"Assess the evidence",
+  title:"Assess the evidence for and against your hypothesis.",
+  note:"Against, as well as for. This is the step the Inverseminar is going to ask you about.",
+  to:"a_conclude"},
+a_conclude:{phase:"Making sense of it",type:"step",short:"Draw conclusions",
+  title:"Draw your conclusions.",
+  note:"Say what your evidence can support, and then stop.",to:"a_sleep"},
+a_sleep:{phase:"Making sense of it",type:"end",short:"Sleep",
+  title:"Sleep.",note:"You have earned it."},
+e_stuck:{phase:"Getting your data",type:"end",short:"Come talk to me",
+  title:"I don't think I can help you from here.",
+  note:"If your data do not already exist, cannot be got by asking people, and cannot be got by watching them, then the question as posed may not be answerable with the resources you have. That is worth knowing now. Come and talk to me — usually the fix is a change to the question, not to the method."}
+};
+
+const ENTRY = {
+  walk:  {start:"p_topic",  lead:""},
+  causal:{start:"ci_binary",lead:"Choosing a statistical causal inference method for observational data. Here the design and the analysis are the same choice. This assumes you already have a causal question and your variables identified — if that is still open, start from <b>Walk me through it</b>."}
+};
+
+const outs = n => n.type==="question" ? n.choices.map(c=>({to:c.to,label:c.label,mini:c.mini}))
+                                      : (n.to ? [{to:n.to,label:""}] : []);
+const node = id => T[id];
+
+/* Short form for the diagram. "No — back to brainstorming" reads as "No" on
+   a chart; the clause after the dash is guidance for the button, not a
+   branch name. `mini` overrides where even the stem is too long. */
+function edgeText(e){
+  if(!e.label) return "";
+  if(e.mini) return e.mini;
+  const stem = e.label.split(" — ")[0].split(", or")[0];
+  return stem.length>16 ? stem.slice(0,15)+"…" : stem;
+}
+const textW = t => t.length*5.2 + 8;
+
+let mode = "walk", path = [], cur = ENTRY.walk.start, scale = 1;
+
+/* ==================================================================
+   LAYOUT — layered left to right
+===================================================================*/
+/* Flow runs top to bottom. Left-to-right was tried first and measured at
+   5320x448 — a 12:1 strip, because the framing phase is nine single-node
+   ranks in a row. Vertical comes out near-square and scrolls naturally. */
+const NW = 132, GAPX = 22, GAPY = 34, PAD = 22;
+
+function wrapLabel(s, max){
+  const words = s.split(/\s+/), lines = []; let line = "";
+  words.forEach(w=>{
+    if((line+" "+w).trim().length > max){ if(line) lines.push(line); line = w; }
+    else line = (line+" "+w).trim();
+  });
+  if(line) lines.push(line);
+  return lines.slice(0,3);
+}
+
+const LAYOUT = (() => {
+  const ids = Object.keys(T);
+
+  /* find back edges with a DFS colouring pass */
+  const back = new Set(), state = {};
+  (function dfs(id){
+    state[id] = 1;
+    outs(node(id)).forEach(e=>{
+      if(state[e.to] === 1) back.add(id+"|"+e.to);
+      else if(!state[e.to]) dfs(e.to);
+    });
+    state[id] = 2;
+  })("p_topic");
+
+  const fwd = {}, rev = {};
+  ids.forEach(i=>{ fwd[i]=[]; rev[i]=[]; });
+  ids.forEach(id => outs(node(id)).forEach(e=>{
+    if(back.has(id+"|"+e.to)) return;
+    fwd[id].push(e.to); rev[e.to].push(id);
+  }));
+
+  /* rank = longest path from the root, over forward edges */
+  const rank = {}; ids.forEach(i=>rank[i]=0);
+  const indeg = {}; ids.forEach(i=>indeg[i]=rev[i].length);
+  const queue = ids.filter(i=>indeg[i]===0);
+  const order = [];
+  while(queue.length){
+    const id = queue.shift(); order.push(id);
+    fwd[id].forEach(t=>{
+      rank[t] = Math.max(rank[t], rank[id]+1);
+      if(--indeg[t] === 0) queue.push(t);
+    });
+  }
+
+  /* geometry per node */
+  const geo = {};
+  ids.forEach(id=>{
+    const lines = wrapLabel(node(id).short, 17);
+    geo[id] = {lines, w:NW, h:Math.max(34, 14 + lines.length*13)};
+  });
+
+  /* each rank is a row; y stacks by the tallest box in each row */
+  const byRank = {};
+  ids.forEach(id => (byRank[rank[id]] ||= []).push(id));
+  const rankNums = Object.keys(byRank).map(Number).sort((a,b)=>a-b);
+  const rowY = {}; let cursorY = PAD;
+  rankNums.forEach(r=>{
+    rowY[r] = cursorY;
+    cursorY += Math.max(...byRank[r].map(i=>geo[i].h)) + GAPY;
+  });
+
+  /* columns: aim for the mean of the parents' centres, then de-collide */
+  const pos = {};
+  rankNums.forEach(r=>{
+    const row = byRank[r];
+    row.forEach(id=>{
+      const ps = rev[id].filter(p=>pos[p]!==undefined);
+      geo[id].want = ps.length
+        ? ps.reduce((s,p)=>s+pos[p].x+geo[p].w/2,0)/ps.length
+        : 0;
+    });
+    row.sort((a,b)=>geo[a].want-geo[b].want || a.localeCompare(b));
+    let cursorX = 0;
+    row.forEach(id=>{
+      const x = Math.max(cursorX, geo[id].want - geo[id].w/2);
+      pos[id] = {x: PAD + x, y: rowY[r]};
+      cursorX = x + geo[id].w + GAPX;
+    });
+  });
+
+  /* normalise, then make room on the left for the back edges, which loop
+     out sideways and would otherwise be drawn off the canvas */
+  const minX = Math.min(...ids.map(i=>pos[i].x));
+  ids.forEach(i=>pos[i].x += PAD - minX);
+
+  const backOff = (a,b,ga,gb) => 46 + Math.abs((b.y+gb.h/2)-(a.y+ga.h/2))*0.10;
+  let reach = 0;
+  ids.forEach(id => outs(node(id)).forEach(e=>{
+    if(!back.has(id+"|"+e.to)) return;
+    const a=pos[id], b=pos[e.to];
+    reach = Math.min(reach, Math.min(a.x,b.x) - backOff(a,b,geo[id],geo[e.to]) - 48);
+  }));
+  if(reach < PAD) ids.forEach(i=>pos[i].x += PAD - reach);
+
+  const W = Math.max(...ids.map(i=>pos[i].x+geo[i].w)) + PAD;
+  const H = Math.max(...ids.map(i=>pos[i].y+geo[i].h)) + PAD;
+
+  /* every edge, with its geometry. Forward edges leave the bottom and
+     enter the top; back edges loop out to the left.
+
+     Labels sit in the gap between two rows, where by construction no box
+     can be, and siblings from the same question fan out horizontally so
+     they never print on top of each other. */
+  const edges = [];
+  ids.forEach(id => {
+    const es = outs(node(id));
+    const a = pos[id], ga = geo[id];
+
+    /* pack the forward labels side by side, centred under the source, using
+       each label's real width so two siblings can never print over each other */
+    const fwdIdx = es.map((e,i)=>i).filter(i=>!back.has(id+"|"+es[i].to));
+    const widths = {}; let total = 0;
+    fwdIdx.forEach((i,k)=>{
+      widths[i] = edgeText(es[i]) ? textW(edgeText(es[i])) : 0;
+      total += widths[i] + (k ? 6 : 0);
+    });
+    let run = a.x + ga.w/2 - total/2;
+
+    es.forEach((e,i)=>{
+      const b = pos[e.to], gb = geo[e.to];
+      const isBack = back.has(id+"|"+e.to);
+      let d, mx, my;
+      if(isBack){
+        const x1 = a.x, y1 = a.y+ga.h/2, x2 = b.x, y2 = b.y+gb.h/2;
+        const off = backOff(a,b,ga,gb);
+        d  = `M${x1},${y1} C${x1-off},${y1} ${x2-off},${y2} ${x2},${y2}`;
+        mx = Math.min(x1,x2) - off*0.72; my = (y1+y2)/2;
+      } else {
+        const x1 = a.x+ga.w/2, y1 = a.y+ga.h, x2 = b.x+gb.w/2, y2 = b.y;
+        const dy = Math.max(16, (y2-y1)*0.45);
+        d  = `M${x1},${y1} C${x1},${y1+dy} ${x2},${y2-dy} ${x2},${y2}`;
+        mx = run + widths[i]/2; run += widths[i] + 6;
+        my = y1 + GAPY/2 + 2;
+      }
+      edges.push({from:id, to:e.to, label:e.label, mini:e.mini, isBack, d, mx, my});
+    });
+  });
+
+  return {pos, geo, W, H, edges, back};
+})();
+
+/* ==================================================================
+   DIAGRAM
+===================================================================*/
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function drawChart(){
+  const {pos, geo, W, H, edges} = LAYOUT;
+  const walked = path.map(p=>p.id).concat([cur]);
+  const onNode = new Set(walked);
+  const onEdge = new Set();
+  for(let i=0;i<walked.length-1;i++) onEdge.add(walked[i]+"|"+walked[i+1]);
+
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" width="${W*scale}" height="${H*scale}" viewBox="0 0 ${W} ${H}">`;
+
+  edges.forEach(e=>{
+    const on = onEdge.has(e.from+"|"+e.to);
+    s += `<path class="ed${on?" on":""}" d="${e.d}"/>`;
+  });
+  edges.forEach(e=>{
+    if(!e.label) return;
+    const on = onEdge.has(e.from+"|"+e.to);
+    const txt = edgeText(e);
+    const w = textW(txt);
+    s += `<rect class="elbg" x="${e.mx-w/2}" y="${e.my-7}" width="${w}" height="13" rx="3"/>`
+      +  `<text class="el${on?" on":""}" x="${e.mx}" y="${e.my+3}" text-anchor="middle">${esc(txt)}</text>`;
+  });
+
+  Object.keys(T).forEach(id=>{
+    const p = pos[id], g = geo[id], n = node(id);
+    const cls = "nd " + (n.milestone?"ms ":"") + (onNode.has(id)?"on":"off") + (id===cur?" now":"");
+    s += `<g class="${cls}" id="nd-${id}">`
+      +  `<rect x="${p.x}" y="${p.y}" width="${g.w}" height="${g.h}" rx="7"/>`;
+    g.lines.forEach((ln,i)=>{
+      s += `<text x="${p.x+g.w/2}" y="${p.y + g.h/2 - (g.lines.length-1)*6.5 + i*13 + 4}" text-anchor="middle">${esc(ln)}</text>`;
+    });
+    s += `</g>`;
+  });
+
+  s += `</svg>`;
+  document.getElementById("scroller").innerHTML = s;
+}
+
+function centreOnCurrent(){
+  const {pos, geo} = LAYOUT, sc = document.getElementById("scroller");
+  const p = pos[cur], g = geo[cur];
+  sc.scrollTo({
+    left: Math.max(0, (p.x + g.w/2)*scale - sc.clientWidth/2),
+    top:  Math.max(0, (p.y + g.h/2)*scale - sc.clientHeight/2),
+    behavior: "smooth"
+  });
+}
+function zoom(dir){
+  scale = Math.min(2, Math.max(0.4, +(scale + dir*0.2).toFixed(2)));
+  drawChart(); centreOnCurrent();
+}
+
+/* ==================================================================
+   WALKTHROUGH
+===================================================================*/
+function render(){
+  const n = node(cur);
+  let h = ENTRY[mode].lead ? `<p class="lead">${ENTRY[mode].lead}</p>` : "";
+
+  if(n.milestone){
+    h += `<div class="milestone">`
+      +  (n.flag?`<span class="flag">${n.flag}</span><br>`:`<p class="kicker">${n.phase}</p>`)
+      +  `<h2>${n.milestone}</h2><p>${n.note}</p>`
+      +  (n.where?`<p class="where"><b>Covered in:</b> ${n.where}</p>`:"")
+      +  `</div>`
+      +  `<div class="choices"><button class="primary" data-to="${n.to}" data-ans="">Keep going &rarr;</button></div>`;
+  } else if(n.type==="step"){
+    h += `<p class="kicker">${n.phase}</p><p class="q">${n.title}</p>`
+      +  (n.note?`<p class="hint">${n.note}</p>`:"")
+      +  (n.where?`<p class="hint where"><b>Covered in:</b> ${n.where}</p>`:"")
+      +  `<div class="choices"><button class="primary" data-to="${n.to}" data-ans="">Done &rarr;</button></div>`;
+  } else if(n.type==="question"){
+    h += `<p class="kicker">${n.phase}</p><p class="q">${n.title}</p>`
+      +  (n.note?`<p class="hint">${n.note}</p>`:"")
+      +  `<div class="choices">`
+      +  n.choices.map((c,i)=>`<button class="${i===0?'primary':''}" data-to="${c.to}" data-ans="${c.label.replace(/"/g,'&quot;')}">${c.label}</button>`).join("")
+      +  `</div>`;
+  } else {
+    h += `<p class="kicker">${n.phase}</p><p class="q">${n.title}</p><p class="hint">${n.note}</p>`;
+  }
+
+  const shown = path.filter(p=>node(p.id).type==="question" || node(p.id).milestone);
+  if(shown.length){
+    h += `<div class="path"><h3>Your project so far</h3><ol class="trail">`;
+    shown.forEach(p=>{
+      const pn = node(p.id);
+      h += pn.milestone
+        ? `<li class="ms"><b>${pn.milestone}</b></li>`
+        : `<li>${pn.title}<span class="ans">${p.answer}</span><button data-rewind="${p.id}">change</button></li>`;
+    });
+    h += `</ol></div>`;
+  }
+
+  h += `<div class="controls">`
+    +  (path.length?`<button onclick="back()">&larr; Back</button>`:"")
+    +  (path.length?`<button onclick="restart()">Start over</button>`:"")
+    +  `</div>`;
+
+  const stage = document.getElementById("stage");
+  stage.innerHTML = h;
+  stage.querySelectorAll("button[data-to]").forEach(b=>
+    b.onclick = () => go(b.dataset.to, b.dataset.ans));
+  stage.querySelectorAll("button[data-rewind]").forEach(b=>
+    b.onclick = () => rewind(b.dataset.rewind));
+
+  drawChart(); centreOnCurrent();
+}
+
+function go(to, answer){ path.push({id:cur, answer}); cur = to; render(); }
+function back(){ const p = path.pop(); if(p){ cur = p.id; render(); } }
+function restart(){ path = []; cur = ENTRY[mode].start; render(); }
+function rewind(id){
+  const i = path.findIndex(p=>p.id===id);
+  if(i>=0){ path = path.slice(0,i); cur = id; render(); }
+}
+
+/* ---------- text outline ---------- */
+function buildMap(){
+  const phases = {};
+  Object.entries(T).forEach(([id,n])=>{ (phases[n.phase] ||= []).push([id,n]); });
+  let h = "";
+  Object.entries(phases).forEach(([phase,nodes])=>{
+    h += `<h2>${phase}</h2><ul>`;
+    nodes.forEach(([id,n])=>{
+      if(n.type==="question"){
+        h += `<li>${n.title}<ul>` + n.choices.map(c=>
+          `<li class="cond">${c.label} &rarr; <span class="term">${node(c.to).milestone || node(c.to).title}</span></li>`).join("") + `</ul></li>`;
+      } else if(n.milestone){ h += `<li class="term">${n.milestone}</li>`; }
+      else if(n.type==="end"){ h += `<li class="term">${n.title}</li>`; }
+      else { h += `<li>${n.title}</li>`; }
+    });
+    h += `</ul>`;
+  });
+  document.getElementById("mapbody").innerHTML = h;
+}
+
+function setTab(which){
+  const isMap = which==="map";
+  document.getElementById("panel-walk").hidden = isMap;
+  document.getElementById("panel-map").hidden  = !isMap;
+  ["walk","causal","map"].forEach(t=>
+    document.getElementById("tab-"+t).setAttribute("aria-selected", String(t===which)));
+  if(!isMap && which!==mode){ mode = which; restart(); }
+}
+
+render();
+buildMap();
+</script>
+</body>
+</html>
